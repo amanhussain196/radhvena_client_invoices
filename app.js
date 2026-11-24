@@ -1,7 +1,8 @@
 /**
  * RADHVENA TECHNOLOGIES - INVOICE MAKER WEBTOOL
  * Blue & White brand theme.
- * Clean, simplified workflow without bank details, SAC, or QR.
+ * Clean, simplified workflow without bank details, SAC, QR, or stamp.
+ * When GST is 0%, CGST, SGST, and IGST rows are completely hidden.
  * Client GST and details are completely optional.
  */
 
@@ -126,7 +127,7 @@ const DEFAULT_INVOICE = {
     currency: "INR",
     currencySymbol: "₹",
     status: "unpaid", // unpaid, paid, overdue
-    taxType: "intra" // intra (CGST+SGST 18%), inter (IGST 18%), none (0%), custom
+    taxType: "intra" // intra (CGST+SGST 18%), inter (IGST 18%), none (0%), auto
   },
 
   // Client Details (All purely optional)
@@ -173,14 +174,7 @@ const DEFAULT_INVOICE = {
   terms: "Payment is due within 15 calendar days from the invoice date.",
 
   // Simple Client Note
-  notes: "Thank you for choosing Radhvena Technologies!",
-
-  // Signatory
-  signatory: {
-    name: "Authorized Signatory",
-    designation: "Finance & Operations",
-    showSeal: true
-  }
+  notes: "Thank you for choosing Radhvena Technologies!"
 };
 
 // Current active state
@@ -248,28 +242,13 @@ function getAmountInWords(amount, currencyCode) {
 }
 
 // -------------------------------------------------------------
-// FINANCIAL CALCULATIONS
+// FINANCIAL CALCULATIONS (FIXED 0% GST HANDLING)
 // -------------------------------------------------------------
 function calculateTotals() {
   let subtotal = 0;
   let totalItemDiscount = 0;
   let taxableAmount = 0;
 
-  invoiceData.items.forEach(item => {
-    const gross = (parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0);
-    const disc = gross * ((parseFloat(item.discountPercent) || 0) / 100);
-    const itemTaxable = gross - disc;
-    item.calculatedAmount = itemTaxable;
-
-    subtotal += gross;
-    totalItemDiscount += disc;
-    taxableAmount += itemTaxable;
-  });
-
-  const extraDisc = parseFloat(invoiceData.extraDiscount) || 0;
-  taxableAmount = Math.max(0, taxableAmount - extraDisc);
-
-  // Determine Tax treatment
   let taxType = invoiceData.meta.taxType || "intra";
   
   // If auto-detect selected
@@ -286,22 +265,39 @@ function calculateTotals() {
   let cgst = 0;
   let sgst = 0;
   let igst = 0;
-  let cgstRate = 0;
-  let sgstRate = 0;
-  let igstRate = 0;
 
-  const avgTaxRate = invoiceData.items.length > 0 ? (parseFloat(invoiceData.items[0].taxRate) || 18) : 18;
+  invoiceData.items.forEach(item => {
+    const gross = (parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0);
+    const disc = gross * ((parseFloat(item.discountPercent) || 0) / 100);
+    const itemTaxable = gross - disc;
+    item.calculatedAmount = itemTaxable;
 
-  if (taxType === "intra") {
-    cgstRate = avgTaxRate / 2;
-    sgstRate = avgTaxRate / 2;
-    cgst = taxableAmount * (cgstRate / 100);
-    sgst = taxableAmount * (sgstRate / 100);
-  } else if (taxType === "inter") {
-    igstRate = avgTaxRate;
-    igst = taxableAmount * (igstRate / 100);
-  } else {
-    // none (0% or non-taxable)
+    subtotal += gross;
+    totalItemDiscount += disc;
+    taxableAmount += itemTaxable;
+
+    // Parse item tax rate cleanly: 0 must stay 0!
+    let rawRate = 18;
+    if (typeof item.taxRate !== 'undefined' && item.taxRate !== null && item.taxRate !== '') {
+      rawRate = parseFloat(item.taxRate);
+    }
+    const itemRate = (taxType === 'none' || isNaN(rawRate) || rawRate <= 0) ? 0 : rawRate;
+
+    if (itemRate > 0) {
+      if (taxType === 'intra') {
+        cgst += itemTaxable * (itemRate / 200);
+        sgst += itemTaxable * (itemRate / 200);
+      } else if (taxType === 'inter') {
+        igst += itemTaxable * (itemRate / 100);
+      }
+    }
+  });
+
+  const extraDisc = parseFloat(invoiceData.extraDiscount) || 0;
+  taxableAmount = Math.max(0, taxableAmount - extraDisc);
+
+  // If taxable value is 0, taxes are 0
+  if (taxableAmount <= 0) {
     cgst = sgst = igst = 0;
   }
 
@@ -310,15 +306,22 @@ function calculateTotals() {
   const roundedGrandTotal = Math.round(rawTotal);
   const roundOff = roundedGrandTotal - rawTotal;
 
+  // Determine effective display tax percentage
+  let displayRate = 18;
+  if (invoiceData.items.length > 0) {
+    const firstRate = parseFloat(invoiceData.items[0].taxRate);
+    if (!isNaN(firstRate) && firstRate > 0) displayRate = firstRate;
+  }
+
   return {
     subtotal,
     totalItemDiscount,
     extraDiscount: extraDisc,
     taxableAmount,
     taxType,
-    cgstRate,
-    sgstRate,
-    igstRate,
+    cgstRate: displayRate / 2,
+    sgstRate: displayRate / 2,
+    igstRate: displayRate,
     cgst,
     sgst,
     igst,
@@ -362,9 +365,6 @@ function render() {
   // Simple Terms & Notes
   document.getElementById('input-terms').value = invoiceData.terms || '';
   document.getElementById('input-notes').value = invoiceData.notes || '';
-  document.getElementById('input-signatory-name').value = invoiceData.signatory.name || '';
-  document.getElementById('input-signatory-desig').value = invoiceData.signatory.designation || '';
-  document.getElementById('input-show-seal').checked = !!invoiceData.signatory.showSeal;
 
   // Render Line Item Editors in Left Panel
   renderLineItemEditors();
@@ -558,27 +558,33 @@ function syncInvoicePreview(totals) {
 
   document.getElementById('pv-taxable').textContent = `${sym} ${formatCurrency(totals.taxableAmount)}`;
 
-  // Taxes
+  // Taxes: CRITICAL RULE: When GST is 0 (totalTax == 0), HIDE CGST, SGST, AND IGST!
   const trCgst = document.getElementById('pv-row-cgst');
   const trSgst = document.getElementById('pv-row-sgst');
   const trIgst = document.getElementById('pv-row-igst');
 
-  if (totals.taxType === 'intra') {
-    trCgst.style.display = 'table-row';
-    trSgst.style.display = 'table-row';
-    trIgst.style.display = 'none';
-    document.getElementById('pv-cgst-label').textContent = `CGST (${totals.cgstRate}%):`;
-    document.getElementById('pv-cgst').textContent = `${sym} ${formatCurrency(totals.cgst)}`;
-    document.getElementById('pv-sgst-label').textContent = `SGST (${totals.sgstRate}%):`;
-    document.getElementById('pv-sgst').textContent = `${sym} ${formatCurrency(totals.sgst)}`;
-  } else if (totals.taxType === 'inter') {
-    trCgst.style.display = 'none';
-    trSgst.style.display = 'none';
-    trIgst.style.display = 'table-row';
-    document.getElementById('pv-igst-label').textContent = `IGST (${totals.igstRate}%):`;
-    document.getElementById('pv-igst').textContent = `${sym} ${formatCurrency(totals.igst)}`;
+  if (totals.totalTax > 0.001) {
+    if (totals.taxType === 'intra') {
+      trCgst.style.display = 'table-row';
+      trSgst.style.display = 'table-row';
+      trIgst.style.display = 'none';
+      document.getElementById('pv-cgst-label').textContent = `CGST (${totals.cgstRate}%):`;
+      document.getElementById('pv-cgst').textContent = `${sym} ${formatCurrency(totals.cgst)}`;
+      document.getElementById('pv-sgst-label').textContent = `SGST (${totals.sgstRate}%):`;
+      document.getElementById('pv-sgst').textContent = `${sym} ${formatCurrency(totals.sgst)}`;
+    } else if (totals.taxType === 'inter') {
+      trCgst.style.display = 'none';
+      trSgst.style.display = 'none';
+      trIgst.style.display = 'table-row';
+      document.getElementById('pv-igst-label').textContent = `IGST (${totals.igstRate}%):`;
+      document.getElementById('pv-igst').textContent = `${sym} ${formatCurrency(totals.igst)}`;
+    } else {
+      trCgst.style.display = 'none';
+      trSgst.style.display = 'none';
+      trIgst.style.display = 'none';
+    }
   } else {
-    // None / 0% Tax
+    // Zero GST: completely hide CGST, SGST, IGST rows!
     trCgst.style.display = 'none';
     trSgst.style.display = 'none';
     trIgst.style.display = 'none';
@@ -600,12 +606,6 @@ function syncInvoicePreview(totals) {
   // Simple Terms and Notes
   document.getElementById('pv-terms').textContent = invoiceData.terms || 'Payment is due within 15 calendar days from the invoice date.';
   document.getElementById('pv-notes').textContent = invoiceData.notes || 'Thank you for choosing Radhvena Technologies!';
-
-  // Signatory
-  document.getElementById('pv-signatory-name').textContent = invoiceData.signatory.name || 'Authorized Signatory';
-  document.getElementById('pv-signatory-desig').textContent = invoiceData.signatory.designation || '';
-  document.getElementById('pv-signatory-company').textContent = `For ${invoiceData.company.name}`;
-  document.getElementById('pv-seal').style.display = invoiceData.signatory.showSeal ? 'flex' : 'none';
 }
 
 // -------------------------------------------------------------
@@ -644,6 +644,10 @@ function updateInvoiceMeta(field, val) {
   if (field === 'currency') {
     const symbols = { INR: '₹', USD: '$', EUR: '€', GBP: '£', AED: 'AED ' };
     invoiceData.meta.currencySymbol = symbols[val] || val + ' ';
+  }
+  if (field === 'taxType' && val === 'none') {
+    // Set all items to 0% tax for consistency
+    invoiceData.items.forEach(item => { item.taxRate = 0; });
   }
   render();
 }
@@ -694,7 +698,7 @@ function addNewItem() {
     qty: 1,
     rate: 10000,
     discountPercent: 0,
-    taxRate: 18
+    taxRate: (invoiceData.meta.taxType === 'none') ? 0 : 18
   });
   render();
 }
@@ -729,7 +733,7 @@ function addServicePreset(index) {
       qty: 1,
       rate: preset.rate,
       discountPercent: 0,
-      taxRate: preset.taxRate
+      taxRate: (invoiceData.meta.taxType === 'none') ? 0 : preset.taxRate
     });
     render();
   }
@@ -775,8 +779,8 @@ function loadSavedDraft() {
     const raw = localStorage.getItem(STORAGE_KEY_CURRENT);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Clean obsolete fields from previous versions if present
       delete parsed.bank;
+      delete parsed.signatory;
       invoiceData = Object.assign({}, DEFAULT_INVOICE, parsed);
     }
   } catch (e) {
@@ -851,6 +855,7 @@ function loadSavedInvoice(index) {
   if (list[index] && list[index].data) {
     invoiceData = JSON.parse(JSON.stringify(list[index].data));
     delete invoiceData.bank;
+    delete invoiceData.signatory;
     render();
     closeSavedModal();
   }
@@ -895,6 +900,7 @@ function importFromJson(event) {
       const imported = JSON.parse(e.target.result);
       if (imported.company && imported.items) {
         delete imported.bank;
+        delete imported.signatory;
         invoiceData = imported;
         render();
         alert("Invoice imported successfully!");
