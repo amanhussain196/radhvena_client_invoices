@@ -12,7 +12,7 @@ A dedicated, streamlined GST Tax Invoice generator designed specifically for **R
 - **PAN:** `AAQCR3137G`
 - **State & Code:** Telangana (36)
 - **Official Email:** `contactus@radhvena.tech`
-- **Official Phone:** `+91 87490 74438`
+- **Official Phone:** `+91 79897 58689`
 - **Official Website:** [www.radhvena.tech](https://www.radhvena.tech)
 - **Brand Theme:** Clean Royal Blue (`#0062f5` / `#005afa`) and Deep Navy (`#00112a`) on Crisp White as per the official `R.png` logo.
 

@@ -111,7 +111,7 @@ const DEFAULT_INVOICE = {
     pincode: "500081",
     country: "India",
     email: "contactus@radhvena.tech",
-    phone: "+91 87490 74438",
+    phone: "+91 79897 58689",
     website: "www.radhvena.tech",
     gstin: "36AAQCR3137G1Z6",
     pan: "AAQCR3137G",
@@ -797,6 +797,9 @@ function loadSavedDraft() {
       delete parsed.signatory;
       if (parsed.company && (!parsed.company.name || parsed.company.name === "Radhvena Technologies Private Limited")) {
         parsed.company.name = "Radhvena Technologies (OPC) Private Limited";
+      }
+      if (parsed.company && (!parsed.company.phone || parsed.company.phone.includes("87490"))) {
+        parsed.company.phone = "+91 79897 58689";
       }
       invoiceData = Object.assign({}, DEFAULT_INVOICE, parsed);
     }
