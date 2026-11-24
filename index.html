@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Radhvena Technologies — Invoice Studio</title>
+  <meta name="description" content="Professional GST invoice maker web tool for Radhvena Technologies Private Limited." />
+  <link rel="icon" type="image/png" href="radhvena-logo.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ================= APP HEADER ================= -->
+  <header class="app-header no-print">
+    <div class="brand-wrapper">
+      <img src="radhvena-logo.png" alt="Radhvena Technologies" class="header-logo" onerror="this.src='R.png'" />
+      <div class="brand-titles">
+        <h1>
+          Radhvena Technologies
+          <span class="tag">Invoice Studio</span>
+        </h1>
+        <p>B2, 6th Floor, Sumukhi Orbit, Madhapur, Hyderabad • GST: 36AAQCR3137G1Z6</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="resetToDefault()" title="Start a fresh invoice">
+        <span>➕</span> New
+      </button>
+
+      <button type="button" class="btn btn-secondary btn-sm" onclick="saveToInvoiceList()" title="Save current invoice draft">
+        <span>💾</span> Save
+      </button>
+
+      <button type="button" class="btn btn-secondary btn-sm" onclick="openSavedModal()" title="View saved invoices">
+        <span>📂</span> Saved
+      </button>
+
+      <button type="button" class="btn btn-secondary btn-sm" onclick="exportAsJson()" title="Download invoice as JSON file">
+        <span>📤</span> Export JSON
+      </button>
+
+      <label class="btn btn-secondary btn-sm" style="margin: 0; cursor: pointer;" title="Import an invoice from JSON file">
+        <span>📥</span> Import JSON
+        <input type="file" accept=".json" onchange="importFromJson(event)" style="display: none;" />
+      </label>
+
+      <!-- High-visibility Print / PDF button -->
+      <button type="button" class="btn btn-primary" onclick="triggerPrint()">
+        <span>🖨️</span> Download PDF / Print
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <div class="app-container">
+
+    <!-- ========== LEFT FORM EDITOR PANEL ========== -->
+    <aside class="editor-panel no-print">
+      <!-- Navigation Tabs -->
+      <div class="editor-tabs">
+        <button type="button" class="tab-btn active" data-target="tab-invoice">📅 Dates &amp; Meta</button>
+        <button type="button" class="tab-btn" data-target="tab-client">👤 Client (Bill To)</button>
+        <button type="button" class="tab-btn" data-target="tab-items">💼 Services &amp; Items</button>
+        <button type="button" class="tab-btn" data-target="tab-terms">📜 Terms &amp; Sign</button>
+      </div>
+
+      <div class="editor-content">
+
+        <!-- TAB 1: INVOICE DATES & META -->
+        <div id="tab-invoice" class="tab-pane active">
+          <div class="form-section">
+            <div class="form-section-title">
+              <span>Invoice Details &amp; Dates</span>
+              <button type="button" class="btn btn-light btn-sm" onclick="autoIncrementInvoiceNo()">Auto Next No</button>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Invoice Number</label>
+                <input type="text" id="input-invoice-no" class="input" onchange="updateInvoiceMeta('invoiceNo', this.value)" />
+              </div>
+              <div class="form-group">
+                <label>Currency</label>
+                <select id="input-currency" class="input" onchange="updateInvoiceMeta('currency', this.value)">
+                  <option value="INR">INR (₹) - Indian Rupee</option>
+                  <option value="USD">USD ($) - US Dollar</option>
+                  <option value="EUR">EUR (€) - Euro</option>
+                  <option value="GBP">GBP (£) - British Pound</option>
+                  <option value="AED">AED (د.إ) - UAE Dirham</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Invoice Date</label>
+                <input type="date" id="input-invoice-date" class="input" onchange="updateInvoiceMeta('invoiceDate', this.value)" />
+              </div>
+              <div class="form-group">
+                <label>Due Date</label>
+                <input type="date" id="input-due-date" class="input" onchange="updateInvoiceMeta('dueDate', this.value)" />
+              </div>
+            </div>
+
+            <!-- Quick Due Date Presets -->
+            <div class="form-group">
+              <label>Quick Due Date Presets</label>
+              <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-light btn-sm" onclick="setDueDateOffset(0)">Due on Receipt</button>
+                <button type="button" class="btn btn-light btn-sm" onclick="setDueDateOffset(7)">+7 Days</button>
+                <button type="button" class="btn btn-light btn-sm" onclick="setDueDateOffset(15)">+15 Days (Standard)</button>
+                <button type="button" class="btn btn-light btn-sm" onclick="setDueDateOffset(30)">+30 Days</button>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>PO / Reference No <span class="label-optional">(Optional)</span></label>
+                <input type="text" id="input-po-number" class="input" placeholder="e.g. PO-8890" onchange="updateInvoiceMeta('poNumber', this.value)" />
+              </div>
+              <div class="form-group">
+                <label>Payment Status</label>
+                <select id="input-status" class="input" onchange="updateInvoiceMeta('status', this.value)">
+                  <option value="unpaid">Unpaid / Payment Due</option>
+                  <option value="paid">Paid in Full</option>
+                  <option value="overdue">Overdue</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Tax Treatment</label>
+              <select id="input-tax-type" class="input" onchange="updateInvoiceMeta('taxType', this.value)">
+                <option value="intra">Intra-State: CGST (9%) + SGST (9%)</option>
+                <option value="inter">Inter-State: IGST (18%)</option>
+                <option value="none">No Tax / 0% GST (Non-GST / Exempt)</option>
+                <option value="auto">Auto-Detect by Client State</option>
+              </select>
+              <div class="input-hint">Select "No Tax" if client is exempt or tax is not applicable.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: CLIENT DETAILS (ALL OPTIONAL) -->
+        <div id="tab-client" class="tab-pane">
+          <div class="form-section">
+            <div class="form-section-title">
+              <span>Client Information <span style="font-size:0.7rem; font-weight:normal; text-transform:none; color:var(--slate-500);">(All details optional)</span></span>
+            </div>
+
+            <div class="form-group">
+              <label>Client / Company Name <span class="label-optional">(Optional)</span></label>
+              <input type="text" id="input-client-name" class="input" placeholder="e.g. Acme Innovations Ltd" onchange="updateClientField('name', this.value)" />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Contact Person <span class="label-optional">(Optional)</span></label>
+                <input type="text" id="input-client-contact" class="input" placeholder="e.g. Rajesh Sharma" onchange="updateClientField('contactPerson', this.value)" />
+              </div>
+              <div class="form-group">
+                <label>Email Address <span class="label-optional">(Optional)</span></label>
+                <input type="email" id="input-client-email" class="input" placeholder="client@example.com" onchange="updateClientField('email', this.value)" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Phone Number <span class="label-optional">(Optional)</span></label>
+              <input type="text" id="input-client-phone" class="input" placeholder="+91 98765 43210" onchange="updateClientField('phone', this.value)" />
+            </div>
+
+            <div class="form-group">
+              <label>Billing Address <span class="label-optional">(Optional)</span></label>
+              <textarea id="input-client-address" class="input" rows="2" placeholder="Suite / Floor, Building Name, Street..." onchange="updateClientField('address', this.value)"></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>City <span class="label-optional">(Optional)</span></label>
+                <input type="text" id="input-client-city" class="input" placeholder="e.g. Hyderabad" onchange="updateClientField('city', this.value)" />
+              </div>
+              <div class="form-group">
+                <label>Pincode <span class="label-optional">(Optional)</span></label>
+                <input type="text" id="input-client-pincode" class="input" placeholder="500081" onchange="updateClientField('pincode', this.value)" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>State / Region <span class="label-optional">(Optional)</span></label>
+              <select id="input-client-state" class="input" onchange="updateClientField('stateCode', this.value)">
+                <!-- Auto-populated from INDIAN_STATES in app.js -->
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Client GSTIN <span class="label-optional">(Optional)</span></label>
+                <input type="text" id="input-client-gstin" class="input" placeholder="e.g. 36AAACA1234F1Z5" maxlength="15" onchange="updateClientField('gstin', this.value.toUpperCase())" />
+                <div class="input-hint">Leave blank if client has no GST.</div>
+              </div>
+              <div class="form-group">
+                <label>Client PAN <span class="label-optional">(Optional)</span></label>
+                <input type="text" id="input-client-pan" class="input" placeholder="e.g. AAACA1234F" maxlength="10" onchange="updateClientField('pan', this.value.toUpperCase())" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: SERVICES & LINE ITEMS -->
+        <div id="tab-items" class="tab-pane">
+          <!-- Radhvena Service Presets -->
+          <div class="service-presets">
+            <div class="preset-title">⚡ Quick Add Radhvena Services</div>
+            <div class="preset-pills" id="preset-pills-list">
+              <!-- Auto-populated from RADHVENA_SERVICE_PRESETS in app.js -->
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">
+              <span>Invoice Line Items</span>
+              <button type="button" class="btn btn-primary btn-sm" onclick="addNewItem()">+ Add Item</button>
+            </div>
+
+            <div id="line-items-container">
+              <!-- Rendered dynamically by renderLineItemEditors() -->
+            </div>
+
+            <div style="margin-top: 1rem; border-top: 1px dashed var(--slate-300); padding-top: 0.75rem;">
+              <div class="form-group">
+                <label>Extra Overall Discount (Flat Amount)</label>
+                <input type="number" id="input-extra-discount" class="input" min="0" value="0" onchange="invoiceData.extraDiscount = parseFloat(this.value) || 0; render();" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: SIMPLE TERMS & SIGNATORY -->
+        <div id="tab-terms" class="tab-pane">
+          <div class="form-section">
+            <div class="form-section-title">
+              <span>Terms &amp; Signatory</span>
+            </div>
+
+            <div class="form-group">
+              <label>Simple Terms &amp; Conditions</label>
+              <textarea id="input-terms" class="input" rows="2" placeholder="e.g. Payment is due within 15 calendar days from the invoice date." onchange="invoiceData.terms = this.value; render();"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Client Note / Message</label>
+              <textarea id="input-notes" class="input" rows="2" placeholder="e.g. Thank you for choosing Radhvena Technologies!" onchange="invoiceData.notes = this.value; render();"></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Signatory Name</label>
+                <input type="text" id="input-signatory-name" class="input" onchange="invoiceData.signatory.name = this.value; render();" />
+              </div>
+              <div class="form-group">
+                <label>Designation</label>
+                <input type="text" id="input-signatory-desig" class="input" onchange="invoiceData.signatory.designation = this.value; render();" />
+              </div>
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.6rem; margin-top: 0.5rem;">
+              <input type="checkbox" id="input-show-seal" style="width: 18px; height: 18px;" onchange="invoiceData.signatory.showSeal = this.checked; render();" />
+              <label for="input-show-seal" style="margin: 0; font-size: 0.8rem; cursor: pointer;">
+                Show Digital Verification Seal / Stamp
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- ========== RIGHT LIVE INVOICE PREVIEW PANEL ========== -->
+    <main class="preview-panel">
+      <!-- Preview Toolbar -->
+      <div class="preview-toolbar no-print">
+        <div class="preview-toolbar-group">
+          <strong>Live Preview</strong>
+          <span>(Formatted for A4 Print &amp; PDF Export)</span>
+        </div>
+        <div class="preview-toolbar-group">
+          <button type="button" class="btn btn-primary btn-sm" onclick="triggerPrint()">
+            🖨️ Print / Save as PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= THE INVOICE SHEET (A4) ================= -->
+      <div class="invoice-sheet" id="invoice-sheet">
+
+        <!-- TOP BAR: Brand & Title -->
+        <div>
+          <div class="inv-top-bar">
+            <div class="inv-brand">
+              <img src="radhvena-logo.png" alt="Radhvena Logo" class="inv-brand-logo" onerror="this.src='R.png'" />
+              <div>
+                <div class="inv-company-name" id="pv-company-name">Radhvena Technologies Private Limited</div>
+                <div class="inv-company-tagline" id="pv-company-tagline">Technology • Automation • Growth</div>
+              </div>
+            </div>
+
+            <div class="inv-title-block">
+              <div class="inv-title-text">TAX INVOICE</div>
+              <div class="inv-subtitle">ORIGINAL FOR RECIPIENT</div>
+              <span id="pv-status-pill" class="inv-status-pill unpaid">UNPAID</span>
+            </div>
+          </div>
+
+          <!-- TWO COLUMN GRID: Company Info + Invoice Meta -->
+          <div class="inv-grid-2">
+            <!-- Left: Supplier Info -->
+            <div class="inv-meta-card">
+              <div class="inv-block-title">FROM</div>
+              <div class="inv-details-list">
+                <span class="inv-details-label">Address:</span>
+                <span class="inv-details-val" id="pv-company-address">B2, 6th Floor, Sumukhi Orbit, Madhapur, Hyderabad, Telangana - 500081</span>
+
+                <span class="inv-details-label">GSTIN:</span>
+                <span class="inv-details-val" style="font-weight:700; color:var(--primary);" id="pv-company-gstin">36AAQCR3137G1Z6</span>
+
+                <span class="inv-details-label">PAN:</span>
+                <span class="inv-details-val" id="pv-company-pan">AAQCR3137G</span>
+
+                <span class="inv-details-label">Contact:</span>
+                <span class="inv-details-val" id="pv-company-contact">+91 87490 74438 | contactus@radhvena.tech</span>
+
+                <span class="inv-details-label">Website:</span>
+                <span class="inv-details-val" id="pv-company-web">www.radhvena.tech</span>
+              </div>
+            </div>
+
+            <!-- Right: Invoice Metadata -->
+            <div class="inv-meta-card">
+              <div class="inv-block-title">INVOICE DETAILS</div>
+              <div class="inv-details-list">
+                <span class="inv-details-label">Invoice No:</span>
+                <span class="inv-details-val" style="font-weight:700; color:var(--navy-dark);" id="pv-invoice-no">RAD/2024-25/001</span>
+
+                <span class="inv-details-label">Invoice Date:</span>
+                <span class="inv-details-val" id="pv-invoice-date">24 Nov 2026</span>
+
+                <span class="inv-details-label">Due Date:</span>
+                <span class="inv-details-val" style="font-weight:700; color:var(--primary);" id="pv-due-date">09 Dec 2026</span>
+
+                <span id="pv-row-po" style="display: none;">
+                  <span class="inv-details-label">PO / Ref No:</span>
+                  <span class="inv-details-val" id="pv-po-number"></span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- CLIENT INFORMATION (BILL TO - CLEAN AND OPTIONAL) -->
+          <div class="inv-client-box">
+            <div class="inv-block-title" style="border-bottom-color: #bfdbfe;">BILLED TO</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div>
+                <div id="pv-client-name" style="font-size: 11pt; font-weight: 700; color: var(--navy-dark); margin-bottom: 2px;">Client Name</div>
+                <div id="pv-client-contact" style="font-size: 8.2pt; color: var(--slate-600); font-weight: 500; display: none;"></div>
+                <div id="pv-client-address" style="font-size: 8.5pt; color: var(--slate-600); margin-top: 3px; display: none;"></div>
+                <div id="pv-client-phone-email" style="font-size: 8pt; color: var(--slate-500); margin-top: 2px; display: none;"></div>
+              </div>
+
+              <div class="inv-details-list">
+                <span id="pv-row-client-gstin" style="display: none;">
+                  <span class="inv-details-label">GSTIN:</span>
+                  <span class="inv-details-val" id="pv-client-gstin" style="font-weight: 700; color: var(--navy-dark);"></span>
+                </span>
+
+                <span id="pv-row-client-pan" style="display: none;">
+                  <span class="inv-details-label">PAN:</span>
+                  <span class="inv-details-val" id="pv-client-pan"></span>
+                </span>
+
+                <span id="pv-row-client-state" style="display: none;">
+                  <span class="inv-details-label">State:</span>
+                  <span class="inv-details-val" id="pv-client-state"></span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- LINE ITEMS TABLE (NO SAC COLUMN) -->
+          <div class="inv-table-wrapper">
+            <table class="inv-table">
+              <thead>
+                <tr>
+                  <th style="width: 38px;" class="text-center">#</th>
+                  <th class="text-left">Service / Item Description</th>
+                  <th style="width: 55px;" class="text-center">Qty</th>
+                  <th style="width: 90px;" class="text-right">Unit Price</th>
+                  <th style="width: 55px;" class="text-center">Disc</th>
+                  <th style="width: 105px;" class="text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody id="pv-items-body">
+                <!-- Rendered dynamically by syncInvoicePreview() -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TOTALS & SIMPLE TERMS GRID -->
+          <div class="inv-bottom-grid">
+            <!-- Left: Simple Terms Card -->
+            <div class="inv-terms-card">
+              <div class="inv-block-title">TERMS &amp; CONDITIONS</div>
+              <div class="inv-terms-content" id="pv-terms">
+                Payment is due within 15 calendar days from the invoice date.
+              </div>
+              <div style="margin-top: 10px; font-size: 8pt; color: var(--primary); font-weight: 600;" id="pv-notes">
+                Thank you for choosing Radhvena Technologies!
+              </div>
+            </div>
+
+            <!-- Right: Summary & Tax Breakdown -->
+            <div>
+              <table class="inv-totals-table">
+                <tr>
+                  <td class="inv-details-label">Subtotal:</td>
+                  <td class="text-right" id="pv-subtotal">₹ 0.00</td>
+                </tr>
+                <tr id="pv-row-discount" style="display: none;">
+                  <td class="inv-details-label">Total Discount:</td>
+                  <td class="text-right" style="color: var(--danger);" id="pv-discount">-₹ 0.00</td>
+                </tr>
+                <tr>
+                  <td class="inv-details-label">Taxable Value:</td>
+                  <td class="text-right" style="font-weight: 600;" id="pv-taxable">₹ 0.00</td>
+                </tr>
+                <tr id="pv-row-cgst" style="display: none;">
+                  <td class="inv-details-label" id="pv-cgst-label">CGST (9%):</td>
+                  <td class="text-right" id="pv-cgst">₹ 0.00</td>
+                </tr>
+                <tr id="pv-row-sgst" style="display: none;">
+                  <td class="inv-details-label" id="pv-sgst-label">SGST (9%):</td>
+                  <td class="text-right" id="pv-sgst">₹ 0.00</td>
+                </tr>
+                <tr id="pv-row-igst" style="display: none;">
+                  <td class="inv-details-label" id="pv-igst-label">IGST (18%):</td>
+                  <td class="text-right" id="pv-igst">₹ 0.00</td>
+                </tr>
+                <tr id="pv-row-roundoff" style="display: none;">
+                  <td class="inv-details-label">Round Off:</td>
+                  <td class="text-right" id="pv-roundoff">₹ 0.00</td>
+                </tr>
+                <tr class="grand-total">
+                  <td>TOTAL DUE:</td>
+                  <td class="text-right" id="pv-grand-total">₹ 0.00</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- AMOUNT IN WORDS -->
+          <div class="inv-words-box">
+            <span class="inv-words-title">Total Amount in Words:</span>
+            <div class="inv-words-val" id="pv-amount-words">INR Zero Only</div>
+          </div>
+        </div>
+
+        <!-- FOOTER: Authorized Signatory -->
+        <div>
+          <div class="inv-footer-grid">
+            <div class="inv-footer-note">
+              This is an official invoice issued by <strong>Radhvena Technologies Private Limited</strong>.
+            </div>
+
+            <!-- Right: Authorized Signatory -->
+            <div class="inv-signature-block">
+              <div class="inv-seal-wrapper">
+                <div class="inv-digital-seal" id="pv-seal">
+                  <span>★ VERIFIED ★</span>
+                  <span style="font-size: 5.5pt; text-transform: uppercase;">Radhvena Tech</span>
+                  <span>DIGITAL SEAL</span>
+                </div>
+              </div>
+              <div class="inv-sig-line"></div>
+              <div class="inv-sig-name" id="pv-signatory-name">Authorized Signatory</div>
+              <div class="inv-sig-designation" id="pv-signatory-desig">Finance &amp; Operations</div>
+              <div style="font-size: 7.2pt; font-weight: 600; color: var(--slate-600); margin-top: 2px;" id="pv-signatory-company">
+                For Radhvena Technologies Private Limited
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Micro Footer -->
+          <div class="inv-page-bottom">
+            Radhvena Technologies Private Limited • B2, 6th Floor, Sumukhi Orbit, Madhapur, Hyderabad, Telangana - 500081 • contactus@radhvena.tech • www.radhvena.tech
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ================= SAVED INVOICES MODAL ================= -->
+  <div class="modal-overlay" id="saved-invoices-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Saved Client Invoices</h3>
+        <button type="button" class="btn btn-light btn-sm" onclick="closeSavedModal()">✕</button>
+      </div>
+      <div class="modal-body" id="saved-invoices-list">
+        <!-- Rendered dynamically by renderSavedInvoicesModal() -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeSavedModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script -->
+  <script src="app.js"></script>
+</body>
+</html>
