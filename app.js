@@ -127,8 +127,7 @@ const DEFAULT_INVOICE = {
     currency: "INR",
     currencySymbol: "₹",
     status: "unpaid", // unpaid, paid, overdue
-    taxType: "intra", // intra (CGST+SGST 18%), inter (IGST 18%), none (0%), auto
-    showStamp: true
+    taxType: "intra" // intra (CGST+SGST 18%), inter (IGST 18%), none (0%), auto
   },
 
   // Client Details (All purely optional)
@@ -172,7 +171,7 @@ const DEFAULT_INVOICE = {
   extraDiscount: 0,
 
   // Simple Terms & Conditions
-  terms: "Payment is due within 15 calendar days from the invoice date.",
+  terms: "1. Payment is due within 15 calendar days from the invoice date.\n2. This is a computer-generated invoice and does not require a physical signature.",
 
   // Simple Client Note
   notes: "Thank you for choosing Radhvena Technologies!"
@@ -366,8 +365,6 @@ function render() {
   // Simple Terms & Notes
   document.getElementById('input-terms').value = invoiceData.terms || '';
   document.getElementById('input-notes').value = invoiceData.notes || '';
-  const stampCheck = document.getElementById('input-show-stamp');
-  if (stampCheck) stampCheck.checked = invoiceData.meta.showStamp !== false;
 
   // Render Line Item Editors in Left Panel
   renderLineItemEditors();
@@ -607,19 +604,8 @@ function syncInvoicePreview(totals) {
   document.getElementById('pv-amount-words').textContent = totals.words;
 
   // Simple Terms and Notes
-  document.getElementById('pv-terms').textContent = invoiceData.terms || 'Payment is due within 15 calendar days from the invoice date.';
+  document.getElementById('pv-terms').textContent = invoiceData.terms || 'Payment is due within 15 calendar days from the invoice date. This is a computer-generated invoice and requires no physical signature.';
   document.getElementById('pv-notes').textContent = invoiceData.notes || 'Thank you for choosing Radhvena Technologies!';
-
-  // Circular Stamp visibility
-  const stampEl = document.getElementById('pv-stamp-wrapper');
-  if (stampEl) {
-    stampEl.style.display = (invoiceData.meta.showStamp !== false) ? 'flex' : 'none';
-  }
-}
-
-function toggleStamp(checked) {
-  invoiceData.meta.showStamp = checked;
-  render();
 }
 
 // -------------------------------------------------------------

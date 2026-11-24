@@ -45,11 +45,12 @@ A dedicated, streamlined GST Tax Invoice generator designed specifically for **R
 - Preloaded with Radhvena's 9 core technology and digital growth service presets from `radhvena.tech` for instant 1-click line item entry.
 - Enter Service Title, scope description, quantity, unit price, item discount, and GST rate.
 
-### 4. Simple Terms & Conditions
-- Simplified from legal clutter to 1-2 friendly, straightforward lines:
+### 4. Simple Terms & Computer-Generated Notice (No Signature Needed)
+- Simplified to clear, friendly statements:
   - *"Payment is due within 15 calendar days from the invoice date."*
+  - *"This is a computer-generated invoice and does not require a physical signature."*
   - *"Thank you for choosing Radhvena Technologies!"*
-- Fully editable directly in the editor.
+- Clean footer without stamp or signing lines.
 
 ### 5. Removed Bank Details & QR
 - Bank remittance and UPI QR sections have been removed from both the form and invoice sheet for a clean, spacious look.

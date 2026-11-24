@@ -736,56 +736,30 @@ textarea {
   margin-top: 2px;
 }
 
-/* Simple Clean Footer with Circular Stamp */
-.inv-footer-grid {
+/* Clean Footer with No-Signature Statement */
+.inv-footer-clean {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  padding-top: 14px;
-  border-top: 1px solid #e2e8f0;
-  font-size: 8pt;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  font-size: 8.2pt;
 }
 
-.inv-footer-note {
-  font-size: 8pt;
-  color: var(--slate-500);
-  line-height: 1.4;
-  max-width: 320px;
-}
-
-.inv-signature-block {
-  text-align: right;
+.inv-no-signature-note {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
+  gap: 6px;
+  color: var(--slate-600);
+  font-style: italic;
+  font-weight: 500;
 }
 
-/* Stamp styling */
-.inv-stamp-wrapper {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: -8px;
-  position: relative;
-  z-index: 5;
-}
-
-.circular-company-stamp {
-  width: 98px;
-  height: 98px;
-  transform: rotate(-10deg);
-  opacity: 0.92;
-  filter: drop-shadow(0 2px 4px rgba(0, 98, 245, 0.2));
-  user-select: none;
-}
-
-.inv-company-sign {
-  font-size: 10.5pt;
-  font-weight: 800;
+.inv-issued-by {
   color: var(--navy-dark);
-  letter-spacing: -0.01em;
-  padding-top: 6px;
-  border-top: 2px solid var(--primary);
-  display: inline-block;
+  font-weight: 700;
   text-align: right;
 }
 
