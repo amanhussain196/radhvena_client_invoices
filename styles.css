@@ -736,7 +736,7 @@ textarea {
   margin-top: 2px;
 }
 
-/* Simple Clean Footer */
+/* Simple Clean Footer with Circular Stamp */
 .inv-footer-grid {
   display: flex;
   justify-content: space-between;
@@ -758,6 +758,24 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+}
+
+/* Stamp styling */
+.inv-stamp-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: -8px;
+  position: relative;
+  z-index: 5;
+}
+
+.circular-company-stamp {
+  width: 98px;
+  height: 98px;
+  transform: rotate(-10deg);
+  opacity: 0.92;
+  filter: drop-shadow(0 2px 4px rgba(0, 98, 245, 0.2));
+  user-select: none;
 }
 
 .inv-company-sign {

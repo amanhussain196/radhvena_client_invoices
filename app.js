@@ -103,7 +103,7 @@ function formatDate(d) {
 const DEFAULT_INVOICE = {
   // Company details
   company: {
-    name: "Radhvena Technologies Private Limited",
+    name: "Radhvena Technologies (OPC) Private Limited",
     tagline: "Technology • Automation • Growth",
     address: "B2, 6th Floor, Sumukhi Orbit, Madhapur",
     city: "Hyderabad",
@@ -127,7 +127,8 @@ const DEFAULT_INVOICE = {
     currency: "INR",
     currencySymbol: "₹",
     status: "unpaid", // unpaid, paid, overdue
-    taxType: "intra" // intra (CGST+SGST 18%), inter (IGST 18%), none (0%), auto
+    taxType: "intra", // intra (CGST+SGST 18%), inter (IGST 18%), none (0%), auto
+    showStamp: true
   },
 
   // Client Details (All purely optional)
@@ -365,6 +366,8 @@ function render() {
   // Simple Terms & Notes
   document.getElementById('input-terms').value = invoiceData.terms || '';
   document.getElementById('input-notes').value = invoiceData.notes || '';
+  const stampCheck = document.getElementById('input-show-stamp');
+  if (stampCheck) stampCheck.checked = invoiceData.meta.showStamp !== false;
 
   // Render Line Item Editors in Left Panel
   renderLineItemEditors();
@@ -606,6 +609,17 @@ function syncInvoicePreview(totals) {
   // Simple Terms and Notes
   document.getElementById('pv-terms').textContent = invoiceData.terms || 'Payment is due within 15 calendar days from the invoice date.';
   document.getElementById('pv-notes').textContent = invoiceData.notes || 'Thank you for choosing Radhvena Technologies!';
+
+  // Circular Stamp visibility
+  const stampEl = document.getElementById('pv-stamp-wrapper');
+  if (stampEl) {
+    stampEl.style.display = (invoiceData.meta.showStamp !== false) ? 'flex' : 'none';
+  }
+}
+
+function toggleStamp(checked) {
+  invoiceData.meta.showStamp = checked;
+  render();
 }
 
 // -------------------------------------------------------------
@@ -781,6 +795,9 @@ function loadSavedDraft() {
       const parsed = JSON.parse(raw);
       delete parsed.bank;
       delete parsed.signatory;
+      if (parsed.company && (!parsed.company.name || parsed.company.name === "Radhvena Technologies Private Limited")) {
+        parsed.company.name = "Radhvena Technologies (OPC) Private Limited";
+      }
       invoiceData = Object.assign({}, DEFAULT_INVOICE, parsed);
     }
   } catch (e) {

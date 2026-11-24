@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Radhvena Technologies — Invoice Studio</title>
-  <meta name="description" content="Professional GST invoice maker web tool for Radhvena Technologies Private Limited." />
+  <meta name="description" content="Professional GST invoice maker web tool for Radhvena Technologies (OPC) Private Limited." />
   <link rel="icon" type="image/png" href="radhvena-logo.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -252,6 +252,13 @@
               <label>Client Note / Message</label>
               <textarea id="input-notes" class="input" rows="2" placeholder="e.g. Thank you for choosing Radhvena Technologies!" onchange="invoiceData.notes = this.value; render();"></textarea>
             </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.6rem; margin-top: 0.75rem;">
+              <input type="checkbox" id="input-show-stamp" style="width: 18px; height: 18px;" checked onchange="toggleStamp(this.checked)" />
+              <label for="input-show-stamp" style="margin: 0; font-size: 0.8rem; cursor: pointer;">
+                Show Circular Company Stamp (Radhvena Technologies OPC Pvt Ltd)
+              </label>
+            </div>
           </div>
         </div>
 
@@ -282,7 +289,7 @@
             <div class="inv-brand">
               <img src="radhvena-logo.png" alt="Radhvena Logo" class="inv-brand-logo" onerror="this.src='R.png'" />
               <div>
-                <div class="inv-company-name" id="pv-company-name">Radhvena Technologies Private Limited</div>
+                <div class="inv-company-name" id="pv-company-name">Radhvena Technologies (OPC) Private Limited</div>
                 <div class="inv-company-tagline" id="pv-company-tagline">Technology • Automation • Growth</div>
               </div>
             </div>
@@ -446,24 +453,65 @@
           </div>
         </div>
 
-        <!-- FOOTER: Simple Clean Company Signatory -->
+        <!-- FOOTER: Circular Corporate Stamp & Company Signatory -->
         <div>
           <div class="inv-footer-grid">
             <div class="inv-footer-note">
-              This is an official invoice issued by <strong>Radhvena Technologies Private Limited</strong>.
+              This is an official invoice issued by <strong>Radhvena Technologies (OPC) Private Limited</strong>.
             </div>
 
-            <!-- Right: Just Radhvena Technologies Private Limited (No stamp, no extra lines) -->
+            <!-- Right: Circular Corporate Stamp + Company Signature Line -->
             <div class="inv-signature-block">
+              <!-- Circular Rubber Stamp SVG -->
+              <div class="inv-stamp-wrapper" id="pv-stamp-wrapper">
+                <svg width="100" height="100" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" class="circular-company-stamp">
+                  <defs>
+                    <path id="stampUpperArc" d="M 12,60 A 48,48 0 1,1 108,60" fill="none" />
+                    <path id="stampLowerArc" d="M 106,60 A 46,46 0 0,1 14,60" fill="none" />
+                  </defs>
+                  <!-- Outer double border -->
+                  <circle cx="60" cy="60" r="57" fill="none" stroke="#005afa" stroke-width="2.6" />
+                  <circle cx="60" cy="60" r="52.5" fill="none" stroke="#005afa" stroke-width="1" />
+                  <circle cx="60" cy="60" r="34" fill="none" stroke="#005afa" stroke-width="1.4" />
+
+                  <!-- Upper curved text: RADHVENA TECHNOLOGIES -->
+                  <text font-size="7.4" font-weight="800" fill="#005afa" letter-spacing="0.7">
+                    <textPath href="#stampUpperArc" startOffset="50%" text-anchor="middle">
+                      ★ RADHVENA TECHNOLOGIES ★
+                    </textPath>
+                  </text>
+
+                  <!-- Lower curved text: OPC PRIVATE LIMITED -->
+                  <text font-size="6.8" font-weight="800" fill="#005afa" letter-spacing="0.5">
+                    <textPath href="#stampLowerArc" startOffset="50%" text-anchor="middle">
+                      OPC PRIVATE LIMITED
+                    </textPath>
+                  </text>
+
+                  <!-- Stamp center details -->
+                  <text x="60" y="50" text-anchor="middle" font-size="7.2" font-weight="800" fill="#005afa" letter-spacing="0.5">
+                    DIRECTOR
+                  </text>
+                  <line x1="39" y1="55" x2="81" y2="55" stroke="#005afa" stroke-width="1" />
+                  <text x="60" y="65" text-anchor="middle" font-size="6.2" font-weight="700" fill="#005afa" letter-spacing="0.8">
+                    HYDERABAD
+                  </text>
+                  <text x="60" y="74" text-anchor="middle" font-size="5" font-weight="800" fill="#005afa">
+                    ★ ★ ★
+                  </text>
+                </svg>
+              </div>
+
+              <!-- Company Sign Title -->
               <div class="inv-company-sign">
-                Radhvena Technologies Private Limited
+                Radhvena Technologies (OPC) Private Limited
               </div>
             </div>
           </div>
 
           <!-- Bottom Micro Footer -->
           <div class="inv-page-bottom">
-            Radhvena Technologies Private Limited • B2, 6th Floor, Sumukhi Orbit, Madhapur, Hyderabad, Telangana - 500081 • contactus@radhvena.tech • www.radhvena.tech
+            Radhvena Technologies (OPC) Private Limited • B2, 6th Floor, Sumukhi Orbit, Madhapur, Hyderabad, Telangana - 500081 • contactus@radhvena.tech • www.radhvena.tech
           </div>
         </div>
 
