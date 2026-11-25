@@ -9,7 +9,6 @@ A dedicated, streamlined GST Tax Invoice generator designed specifically for **R
 - **Tagline:** Technology • Automation • Growth (*"We build what's next for your business."*)
 - **Registered & Operating Office:** B2, 6th Floor, Sumukhi Orbit, Madhapur, Hyderabad, Telangana - 500081, India
 - **GSTIN:** `36AAQCR3137G1Z6`
-- **PAN:** `AAQCR3137G`
 - **State & Code:** Telangana (36)
 - **Official Email:** `contactus@radhvena.tech`
 - **Official Phone:** `+91 79897 58689`

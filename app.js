@@ -114,7 +114,6 @@ const DEFAULT_INVOICE = {
     phone: "+91 79897 58689",
     website: "www.radhvena.tech",
     gstin: "36AAQCR3137G1Z6",
-    pan: "AAQCR3137G",
     stateCode: "36"
   },
 
@@ -437,7 +436,6 @@ function syncInvoicePreview(totals) {
   document.getElementById('pv-company-tagline').textContent = invoiceData.company.tagline;
   document.getElementById('pv-company-address').textContent = `${invoiceData.company.address}, ${invoiceData.company.city}, ${invoiceData.company.state} - ${invoiceData.company.pincode}`;
   document.getElementById('pv-company-gstin').textContent = invoiceData.company.gstin;
-  document.getElementById('pv-company-pan').textContent = invoiceData.company.pan;
   document.getElementById('pv-company-contact').textContent = `${invoiceData.company.phone} | ${invoiceData.company.email}`;
   document.getElementById('pv-company-web').textContent = invoiceData.company.website;
 
