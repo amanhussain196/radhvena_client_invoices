@@ -392,26 +392,26 @@ function renderLineItemEditors() {
       </div>
       <div class="form-group">
         <label>Service Title</label>
-        <input type="text" class="input" value="${escapeHtml(item.title)}" onchange="updateItemField(${index}, 'title', this.value)" placeholder="e.g. Web Application Development" />
+        <input type="text" class="input" value="${escapeHtml(item.title)}" oninput="updateItemField(${index}, 'title', this.value)" onchange="updateItemField(${index}, 'title', this.value)" placeholder="e.g. Web Application Development" />
       </div>
       <div class="form-group">
         <label>Description / Deliverables (Optional)</label>
-        <textarea class="input" rows="2" onchange="updateItemField(${index}, 'desc', this.value)" placeholder="Key scope, milestone details...">${escapeHtml(item.desc || '')}</textarea>
+        <textarea class="input" rows="2" oninput="updateItemField(${index}, 'desc', this.value)" onchange="updateItemField(${index}, 'desc', this.value)" placeholder="Key scope, milestone details...">${escapeHtml(item.desc || '')}</textarea>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>Qty / Units</label>
-          <input type="number" class="input" min="1" step="any" value="${item.qty}" onchange="updateItemField(${index}, 'qty', parseFloat(this.value) || 1)" />
+          <input type="number" class="input" min="1" step="any" value="${item.qty}" oninput="updateItemField(${index}, 'qty', parseFloat(this.value) || 0)" onchange="updateItemField(${index}, 'qty', parseFloat(this.value) || 1)" />
         </div>
         <div class="form-group">
           <label>Unit Price (${invoiceData.meta.currencySymbol})</label>
-          <input type="number" class="input" min="0" step="any" value="${item.rate}" onchange="updateItemField(${index}, 'rate', parseFloat(this.value) || 0)" />
+          <input type="number" class="input" min="0" step="any" value="${item.rate}" oninput="updateItemField(${index}, 'rate', parseFloat(this.value) || 0)" onchange="updateItemField(${index}, 'rate', parseFloat(this.value) || 0)" />
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>Discount (%)</label>
-          <input type="number" class="input" min="0" max="100" value="${item.discountPercent || 0}" onchange="updateItemField(${index}, 'discountPercent', parseFloat(this.value) || 0)" />
+          <input type="number" class="input" min="0" max="100" value="${item.discountPercent || 0}" oninput="updateItemField(${index}, 'discountPercent', parseFloat(this.value) || 0)" onchange="updateItemField(${index}, 'discountPercent', parseFloat(this.value) || 0)" />
         </div>
         <div class="form-group">
           <label>GST Rate (%)</label>
@@ -432,6 +432,10 @@ function syncInvoicePreview(totals) {
   const sym = invoiceData.meta.currencySymbol;
 
   // Header & Company (Radhvena Technologies)
+  const titleTextEl = document.getElementById('pv-title-text');
+  if (titleTextEl) {
+    titleTextEl.textContent = (totals.totalTax > 0.001) ? 'TAX INVOICE' : 'INVOICE';
+  }
   document.getElementById('pv-company-name').textContent = invoiceData.company.name;
   document.getElementById('pv-company-tagline').textContent = invoiceData.company.tagline;
   document.getElementById('pv-company-address').textContent = `${invoiceData.company.address}, ${invoiceData.company.city}, ${invoiceData.company.state} - ${invoiceData.company.pincode}`;
@@ -684,7 +688,10 @@ function updateClientField(field, val) {
 function updateItemField(index, field, val) {
   if (invoiceData.items[index]) {
     invoiceData.items[index][field] = val;
-    render();
+    // Instantly calculate and update preview without rebuilding inputs to preserve focus
+    const totals = calculateTotals();
+    syncInvoicePreview(totals);
+    saveCurrentDraft();
   }
 }
 
@@ -779,11 +786,17 @@ function loadSavedDraft() {
       const parsed = JSON.parse(raw);
       delete parsed.bank;
       delete parsed.signatory;
-      if (parsed.company && (!parsed.company.name || parsed.company.name === "Radhvena Technologies Private Limited")) {
+      if (parsed.company) {
+        delete parsed.company.pan;
         parsed.company.name = "Radhvena Technologies (OPC) Private Limited";
-      }
-      if (parsed.company && (!parsed.company.phone || parsed.company.phone.includes("87490"))) {
         parsed.company.phone = "+91 79897 58689";
+        parsed.company.email = "contactus@radhvena.tech";
+        parsed.company.website = "www.radhvena.tech";
+        parsed.company.gstin = "36AAQCR3137G1Z6";
+        parsed.company.address = "B2, 6th Floor, Sumukhi Orbit, Madhapur";
+        parsed.company.city = "Hyderabad";
+        parsed.company.state = "Telangana";
+        parsed.company.pincode = "500081";
       }
       invoiceData = Object.assign({}, DEFAULT_INVOICE, parsed);
     }
@@ -860,6 +873,11 @@ function loadSavedInvoice(index) {
     invoiceData = JSON.parse(JSON.stringify(list[index].data));
     delete invoiceData.bank;
     delete invoiceData.signatory;
+    if (invoiceData.company) {
+      delete invoiceData.company.pan;
+      invoiceData.company.phone = "+91 79897 58689";
+      invoiceData.company.name = "Radhvena Technologies (OPC) Private Limited";
+    }
     render();
     closeSavedModal();
   }
@@ -905,6 +923,11 @@ function importFromJson(event) {
       if (imported.company && imported.items) {
         delete imported.bank;
         delete imported.signatory;
+        if (imported.company) {
+          delete imported.company.pan;
+          imported.company.phone = "+91 79897 58689";
+          imported.company.name = "Radhvena Technologies (OPC) Private Limited";
+        }
         invoiceData = imported;
         render();
         alert("Invoice imported successfully!");
